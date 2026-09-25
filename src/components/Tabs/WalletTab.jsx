@@ -127,7 +127,27 @@ export default function WalletTab(props) {
     loadRealData();
   }, []);
 
-  const vipPlan = props.vipPlan || 'Free';
+  // Realtime balance & transaction sync listener
+  React.useEffect(() => {
+    const handleBalanceRefresh = () => {
+      apiWallet.getBalance().then(b => {
+        if (b && typeof b.coins === 'number' && typeof setUserCoins === 'function') {
+          setUserCoins(b.coins);
+        }
+      });
+      apiWallet.getTransactions().then(txs => {
+        if (Array.isArray(txs) && typeof setTxHistoryList === 'function') {
+          setTxHistoryList(txs);
+        }
+      });
+    };
+    window.addEventListener('vlive_balance_updated', handleBalanceRefresh);
+    window.addEventListener('vlive_daily_reward_claimed', handleBalanceRefresh);
+    return () => {
+      window.removeEventListener('vlive_balance_updated', handleBalanceRefresh);
+      window.removeEventListener('vlive_daily_reward_claimed', handleBalanceRefresh);
+    };
+  }, [setUserCoins, setTxHistoryList]);
   const vipExpireDays = props.vipExpireDays || 0;
   const [isVipMonthlyClaimed, setIsVipMonthlyClaimed] = React.useState(false);
   const [selectedVipPlan, setSelectedVipPlan] = React.useState('VIP Platinum');
@@ -2484,10 +2504,15 @@ export default function WalletTab(props) {
                       <h4 className="font-bold text-white">{window.loc('اشتراک VIP ماهیانه', 'Monthly VIP subscription')}</h4>
                       <p className="text-amber-400 font-black font-mono">500 Coins</p>
                       <button 
-                        onClick={() => {
+                        onClick={async () => {
                           if (userCoins < 500) { showToast(window.loc('موجودی سکه کافی نیست!', 'Not enough coins!')); return; }
-                          /* Removed mock transaction 500 */
-                          showToast(window.loc('👑 اشتراک VIP برای شما فعال شد!', '👑 VIP subscription has been activated for you!'));
+                          const res = await apiWallet.purchaseVip('vip_gold', 1, 500);
+                          if (res && res.success) {
+                            if (typeof setUserCoins === 'function') setUserCoins(res.remaining_coins);
+                            showToast(window.loc('👑 اشتراک VIP برای شما فعال شد!', '👑 VIP subscription has been activated for you!'));
+                          } else {
+                            showToast(res?.error || window.loc('خطا در خرید اشتراک VIP', 'Error purchasing VIP'));
+                          }
                         }}
                         className="w-full py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold"
                       >
@@ -2499,10 +2524,15 @@ export default function WalletTab(props) {
                       <h4 className="font-bold text-white">{window.loc('بوست پروفایل (Profile Boost)', 'Profile Boost')}</h4>
                       <p className="text-amber-400 font-black font-mono">200 Coins</p>
                       <button 
-                        onClick={() => {
+                        onClick={async () => {
                           if (userCoins < 200) { showToast(window.loc('موجودی سکه کافی نیست!', 'Not enough coins!')); return; }
-                          /* Removed mock transaction 200 */
-                          showToast(window.loc('🚀 پروفایل شما به صورت ویژه نمایش داده شد!', '🚀 Your profile has been featured!'));
+                          const res = await apiWallet.deductCoins(200, 'boost_profile', 'خرید بوست ۲۴ ساعته پروفایل');
+                          if (res && res.success) {
+                            if (typeof setUserCoins === 'function') setUserCoins(res.newCoins);
+                            showToast(window.loc('🚀 پروفایل شما به صورت ویژه نمایش داده شد!', '🚀 Your profile has been featured!'));
+                          } else {
+                            showToast(res?.error || window.loc('خطا در خرید بوست', 'Error purchasing boost'));
+                          }
                         }}
                         className="w-full py-1.5 rounded-xl bg-purple-600 text-white font-bold"
                       >
@@ -2514,10 +2544,15 @@ export default function WalletTab(props) {
                       <h4 className="font-bold text-white">{window.loc('پروموت لایو استریم', 'Promote live stream')}</h4>
                       <p className="text-amber-400 font-black font-mono">1,000 Coins</p>
                       <button 
-                        onClick={() => {
+                        onClick={async () => {
                           if (userCoins < 1000) { showToast(window.loc('موجودی سکه کافی نیست!', 'Not enough coins!')); return; }
-                          /* Removed mock transaction 1000 */
-                          showToast(window.loc('🎥 لایو شما در بالای صفحه اول سنجاق شد!', '🎥 Your live was pinned at the top of the first page!'));
+                          const res = await apiWallet.deductCoins(1000, 'promote_live', 'پروموت و سنجاق لایو در بالای صفحه');
+                          if (res && res.success) {
+                            if (typeof setUserCoins === 'function') setUserCoins(res.newCoins);
+                            showToast(window.loc('🎥 لایو شما در بالای صفحه اول سنجاق شد!', '🎥 Your live was pinned at the top of the first page!'));
+                          } else {
+                            showToast(res?.error || window.loc('خطا در سنجاق لایو', 'Error pinning live'));
+                          }
                         }}
                         className="w-full py-1.5 rounded-xl bg-pink-600 text-white font-bold"
                       >
@@ -2560,14 +2595,19 @@ export default function WalletTab(props) {
                         <p className="font-bold text-white text-xs">{g.name}</p>
                         <span className="text-amber-300 font-black font-mono block text-xs">{g.coins.toLocaleString()} Coins</span>
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             if (userCoins < g.coins) {
                               showToast(window.loc('موجودی سکه کافی نیست! ابتدا سکه خریداری کنید.', 'Not enough coins! First buy coins.'));
                               setWalletSubTab('buy');
                               return;
                             }
-                            /* Removed mock transaction g.coins */
-                            showToast(window.loc(`🎁 هدیه ${g.name} با موفقیت ارسال شد!`, `🎁 هدیه ${g.name} با موفقیت ارسال شد!`));
+                            const res = await apiWallet.deductCoins(g.coins, 'send_gift', `ارسال هدیه ${g.name} از فروشگاه هدایا`);
+                            if (res && res.success) {
+                              if (typeof setUserCoins === 'function') setUserCoins(res.newCoins);
+                              showToast(window.loc(`🎁 هدیه ${g.name} با موفقیت ارسال شد!`, `🎁 Gift ${g.name} sent successfully!`));
+                            } else {
+                              showToast(res?.error || window.loc('خطا در ارسال هدیه', 'Error sending gift'));
+                            }
                           }}
                           className="w-full py-1.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs shadow"
                         >

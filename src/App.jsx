@@ -116,7 +116,7 @@ export default function App() {
   });
   const [userCoins, setUserCoins] = useState(() => {
     const c = safeStorage.getItem('vlive_user_coins');
-    return c ? Number(c) : 0;
+    return c ? Math.max(Number(c), 150) : 150;
   });
   const [userDiamonds, setUserDiamonds] = useState(() => {
     const d = safeStorage.getItem('vlive_user_diamonds');
@@ -1433,29 +1433,36 @@ export default function App() {
   // Rewards & Mini Games
   const handleClaimDailyRewardAction = useCallback(async () => {
     try {
-      const res = await apiWallet.claimDailyBonus();
+      const rewardStatus = economyService.getDailyRewardStatus(lastRewardClaimTimestamp, dailyStreak);
+      const expectedCoins = (rewardStatus && rewardStatus.rewardToday && typeof rewardStatus.rewardToday.coins === 'number') 
+        ? rewardStatus.rewardToday.coins 
+        : 10;
+
+      const res = await apiWallet.claimDailyBonus(dailyStreak, expectedCoins);
       if (res && res.success) {
         const now = Date.now();
         setLastRewardClaimTimestamp(now);
         setDailyStreak(prev => prev + 1);
-        const updatedCoins = typeof res.newCoins === 'number' ? res.newCoins : (userCoins + (res.bonusCoins || 50));
+        const actualBonus = res.bonusCoins || expectedCoins;
+        const updatedCoins = typeof res.newCoins === 'number' ? res.newCoins : (userCoins + actualBonus);
         setUserCoins(updatedCoins);
         setCurrentUser(prev => prev ? { ...prev, coins: updatedCoins, userCoins: updatedCoins } : prev);
         safeStorage.setItem('vlive_user_coins', String(updatedCoins));
-        setUnlockedRewardData({ title: loc('پاداش روزانه ورود', 'Daily Login Reward'), coins: res.bonusCoins || 50, streak: dailyStreak + 1 });
+        setUnlockedRewardData({ title: loc('پاداش روزانه ورود', 'Daily Login Reward'), coins: actualBonus, streak: dailyStreak + 1 });
         setIsRewardOpeningModalOpen(true);
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('vlive_daily_reward_claimed', { detail: { timestamp: now, bonusCoins: res.bonusCoins || 50, newCoins: updatedCoins } }));
+          window.dispatchEvent(new CustomEvent('vlive_daily_reward_claimed', { detail: { timestamp: now, bonusCoins: actualBonus, newCoins: updatedCoins } }));
           window.dispatchEvent(new CustomEvent('vlive_balance_updated', { detail: { coins: updatedCoins } }));
         }
-        showToast(loc(('🎁 جایزه روزانه ' + (res.bonusCoins || 50) + ' سکه به موجودی اضافه شد!'), '🎁 Daily reward added!'));
+        apiWallet.getTransactions().then(txs => setTxHistoryList(txs || []));
+        showToast(loc(('🎁 جایزه روزانه ' + actualBonus + ' سکه به موجودی اضافه شد!'), `🎁 Daily reward +${actualBonus} coins added!`));
       } else {
         showToast(loc('جایزه روزانه امروز را قبلاً دریافت کرده‌اید', 'Daily reward already claimed today'));
       }
     } catch (err) {
       showToast(loc('خطا در دریافت جایزه روزانه', 'Error claiming daily reward'));
     }
-  }, [dailyStreak, userCoins, showToast]);
+  }, [dailyStreak, lastRewardClaimTimestamp, userCoins, showToast]);
 
   const handleSpinLuckyWheel = useCallback(async () => {
     if (isWheelSpinning) return;
@@ -3016,6 +3023,17 @@ export default function App() {
       }
     };
 
+    const handleProfileBonusEvent = (e) => {
+      const bonus = e.detail?.bonusCoins || 150;
+      const newCoins = e.detail?.newCoins;
+      if (typeof newCoins === 'number') {
+        setUserCoins(newCoins);
+        setCurrentUser(prev => prev ? { ...prev, coins: newCoins, userCoins: newCoins } : prev);
+        safeStorage.setItem('vlive_user_coins', String(newCoins));
+      }
+      showToast(loc(`🎉 تبریک! ${bonus} سکه پاداش تکمیل پروفایل به کیف پول شما واریز شد!`, `🎉 Congrats! +${bonus} profile completion bonus coins added to your wallet!`));
+    };
+
     const handleVipUpdatedEvent = (e) => {
       const detail = e.detail;
       if (detail) {
@@ -3064,6 +3082,7 @@ export default function App() {
     window.addEventListener('vlive_new_notification', handleLocalNotifEvent);
     window.addEventListener('vlive_kyc_updated', handleKycUpdatedEvent);
     window.addEventListener('vlive_balance_updated', handleBalanceUpdatedEvent);
+    window.addEventListener('vlive_profile_bonus_awarded', handleProfileBonusEvent);
     window.addEventListener('vlive_vip_updated', handleVipUpdatedEvent);
     window.addEventListener('vlive_user_updated', handleUserUpdatedEvent);
     
@@ -3074,6 +3093,7 @@ export default function App() {
       window.removeEventListener('vlive_new_notification', handleLocalNotifEvent);
       window.removeEventListener('vlive_kyc_updated', handleKycUpdatedEvent);
       window.removeEventListener('vlive_balance_updated', handleBalanceUpdatedEvent);
+      window.removeEventListener('vlive_profile_bonus_awarded', handleProfileBonusEvent);
       window.removeEventListener('vlive_vip_updated', handleVipUpdatedEvent);
       window.removeEventListener('vlive_user_updated', handleUserUpdatedEvent);
       window.removeEventListener('vlive_stream_started', handleLocalStreamStarted);
@@ -4442,6 +4462,13 @@ export default function App() {
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('vlive_profile_updated', { detail: finalProfile }));
           }
+          apiProfile.checkAndAwardProfileBonus(finalProfile).then(bRes => {
+            if (bRes && bRes.awarded) {
+              const awardCoins = bRes.newCoins || (userCoins + 150);
+              setUserCoins(awardCoins);
+              setCurrentUser(prev => prev ? { ...prev, coins: awardCoins, userCoins: awardCoins } : prev);
+            }
+          }).catch(() => {});
           showToast(loc(`✨ ثبت‌نام و تکمیل مشخصات با موفقیت انجام شد! خوش آمدید @${finalProfile.username}`, `✨ Profile completed successfully! Welcome @${finalProfile.username}`));
         }} />
 

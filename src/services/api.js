@@ -170,7 +170,7 @@ export const apiAuth = {
 
     try {
       await supabase.from('profiles').upsert([profileUpsert], { onConflict: 'id' });
-      await supabase.from('wallets').upsert([{ user_id: userId, coins: 5000, usdt_balance: 0.0 }], { onConflict: 'user_id' });
+      await supabase.from('wallets').upsert([{ user_id: userId, coins: 150, usdt_balance: 0.0 }], { onConflict: 'user_id' });
     } catch (err) {
       console.warn('Profile upsert in registerOrLoginUser note:', err);
     }
@@ -483,7 +483,7 @@ export const apiAuth = {
     }
 
     // Ensure wallet exists
-    await supabase.from('wallets').upsert([{ user_id: userId, coins: 5000, usdt_balance: 0.0 }], { onConflict: 'user_id' });
+    await supabase.from('wallets').upsert([{ user_id: userId, coins: 150, usdt_balance: 0.0 }], { onConflict: 'user_id' });
 
     localStorage.setItem('vlive_user_id', userId);
     if (authData?.session?.access_token) {
@@ -788,7 +788,80 @@ export const apiProfile = {
       window.dispatchEvent(new CustomEvent('vlive_profile_updated', { detail: safeUpdates }));
     }
 
+    // Check & Award 150 Coins profile completion bonus if eligible
+    try {
+      this.checkAndAwardProfileBonus(safeUpdates);
+    } catch(bonusErr) {
+      console.warn('Profile completion bonus check notice:', bonusErr);
+    }
+
     return { success: !error, data: data?.[0], error: error?.message };
+  },
+
+  async checkAndAwardProfileBonus(profileOrUpdates = {}) {
+    const { data: authData } = await supabase.auth.getUser();
+    const uid = authData?.user?.id || getUserId();
+    if (!uid || uid === 'me') return { awarded: false };
+
+    const storageKey = `vlive_profile_bonus_claimed_${uid}`;
+    if (safeStorage.getItem(storageKey) === 'true') {
+      return { awarded: false, reason: 'ALREADY_CLAIMED' };
+    }
+
+    try {
+      // Check database if user already claimed
+      const { data: prof } = await supabase.from('profiles').select('name, username, avatar, avatar_url, gender, bio, age, city, profile_bonus_claimed').eq('id', uid).maybeSingle();
+      if (prof?.profile_bonus_claimed) {
+        safeStorage.setItem(storageKey, 'true');
+        return { awarded: false, reason: 'ALREADY_CLAIMED_DB' };
+      }
+
+      // Check if user has sufficient profile fields filled to qualify
+      const name = profileOrUpdates?.name || prof?.name || prof?.username;
+      const avatar = profileOrUpdates?.avatar || profileOrUpdates?.avatar_url || prof?.avatar || prof?.avatar_url;
+      const gender = profileOrUpdates?.gender || prof?.gender;
+      const details = profileOrUpdates?.bio || prof?.bio || profileOrUpdates?.age || prof?.age || profileOrUpdates?.city || prof?.city;
+
+      const isProfileComplete = Boolean(name && (avatar && avatar.length > 5) && gender && details);
+      if (!isProfileComplete) {
+        return { awarded: false, reason: 'PROFILE_INCOMPLETE' };
+      }
+
+      // Award exactly 150 bonus coins
+      const bonusAmount = 150;
+      const current = await apiWallet.getBalance();
+      const newCoins = (current.coins || 0) + bonusAmount;
+
+      safeStorage.setItem(storageKey, 'true');
+      safeStorage.setItem('vlive_user_coins', String(newCoins));
+
+      await supabase.from('profiles').update({ coins: newCoins, user_coins: newCoins, profile_bonus_claimed: true }).eq('id', uid);
+      await supabase.from('wallets').upsert({
+        user_id: uid,
+        coins: newCoins,
+        usdt_balance: current.usdt_balance || 0,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
+
+      await supabase.from('transactions').insert([{
+        user_id: uid,
+        tx_type: 'buy_coins',
+        amount_coins: bonusAmount,
+        amount_usdt: 0,
+        status: 'Completed',
+        description: 'Profile Completion Bonus (+150 Coins) / پاداش تکمیل پروفایل (۱۵۰ سکه)'
+      }]);
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('vlive_balance_updated', { detail: { coins: newCoins, userId: uid } }));
+        window.dispatchEvent(new CustomEvent('vlive_profile_bonus_awarded', { detail: { bonusCoins: bonusAmount, newCoins } }));
+      }
+
+      return { success: true, awarded: true, bonusCoins: bonusAmount, newCoins };
+    } catch (e) {
+      console.warn('checkAndAwardProfileBonus error:', e);
+      return { awarded: false, error: e.message };
+    }
   },
 
   // Instant local state + DB sync function
@@ -3223,7 +3296,12 @@ export const apiLive = {
 export const apiWallet = {
   async getBalance() {
     const uid = getUserId();
-    if (!uid) return { coins: 0, usdt_balance: 0 };
+    const BASELINE_COINS = 150;
+    if (!uid) {
+      const local = safeStorage.getItem('vlive_user_coins');
+      const val = local ? Number(local) : BASELINE_COINS;
+      return { coins: Math.max(val, BASELINE_COINS), usdt_balance: 0 };
+    }
     try {
       const { data: walData } = await supabase.from('wallets').select('coins, usdt_balance').eq('user_id', uid).maybeSingle();
       const { data: profData } = await supabase.from('profiles').select('coins').eq('id', uid).maybeSingle();
@@ -3231,34 +3309,44 @@ export const apiWallet = {
       const wCoins = (walData && typeof walData.coins === 'number') ? Number(walData.coins) : null;
       const pCoins = (profData && typeof profData.coins === 'number') ? Number(profData.coins) : null;
 
-      let coins = 0;
+      let coins = BASELINE_COINS;
       if (wCoins !== null && pCoins !== null) {
-        coins = Math.max(wCoins, pCoins);
+        coins = Math.max(wCoins, pCoins, BASELINE_COINS);
       } else if (pCoins !== null) {
-        coins = pCoins;
+        coins = Math.max(pCoins, BASELINE_COINS);
       } else if (wCoins !== null) {
-        coins = wCoins;
+        coins = Math.max(wCoins, BASELINE_COINS);
+      } else {
+        const local = safeStorage.getItem('vlive_user_coins');
+        if (local) {
+          coins = Math.max(Number(local), BASELINE_COINS);
+        }
       }
 
-      // Keep both tables strictly synced if they differ
-      if (uid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(uid)) && (wCoins !== coins || pCoins !== coins)) {
-        try { await supabase.from('profiles').update({ coins, user_coins: coins }).eq('id', uid); } catch(e){}
-        try {
-          await supabase.from('wallets').upsert({
-            user_id: uid,
-            coins,
-            usdt_balance: Number(walData?.usdt_balance || 0),
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'user_id' });
-        } catch(e){}
+      // Keep both tables strictly synced with valid balance
+      if (uid && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(uid))) {
+        if (pCoins !== coins) {
+          try { await supabase.from('profiles').update({ coins, user_coins: coins }).eq('id', uid); } catch(e){}
+        }
+        if (wCoins !== coins || !walData) {
+          try {
+            await supabase.from('wallets').upsert({
+              user_id: uid,
+              coins,
+              usdt_balance: Number(walData?.usdt_balance || 0),
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+          } catch(e){}
+        }
       }
 
+      safeStorage.setItem('vlive_user_coins', String(coins));
       return {
         coins,
         usdt_balance: Number(walData?.usdt_balance || 0)
       };
     } catch (e) {
-      return { coins: 0, usdt_balance: 0 };
+      return { coins: BASELINE_COINS, usdt_balance: 0 };
     }
   },
 
@@ -3274,8 +3362,8 @@ export const apiWallet = {
       let amountStr = '';
       if (tx.tx_type === 'buy_coins' || tx.tx_type === 'deposit') { 
         icon = '🪙'; color = 'text-amber-400'; amountStr = `+${tx.amount_coins} Coins`; 
-      } else if (tx.tx_type === 'send_gift' || tx.tx_type === 'call_charge' || tx.tx_type === 'buy_vip' || tx.tx_type === 'buy_service' || tx.tx_type === 'paid_call_minute') { 
-        icon = tx.tx_type === 'buy_vip' ? '👑' : (tx.tx_type === 'call_charge' || tx.tx_type === 'paid_call_minute') ? '📞' : '🎁'; 
+      } else if (tx.tx_type === 'send_gift' || tx.tx_type === 'call_charge' || tx.tx_type === 'buy_vip' || tx.tx_type === 'buy_service' || tx.tx_type === 'paid_call_minute' || tx.tx_type === 'boost_profile' || tx.tx_type === 'promote_live') { 
+        icon = tx.tx_type === 'buy_vip' ? '👑' : (tx.tx_type === 'call_charge' || tx.tx_type === 'paid_call_minute') ? '📞' : tx.tx_type === 'boost_profile' ? '🚀' : tx.tx_type === 'promote_live' ? '🎥' : '🎁'; 
         color = 'text-rose-400'; 
         amountStr = `-${Math.abs(tx.amount_coins)} Coins`; 
       } else if (tx.tx_type === 'receive_gift' || tx.tx_type === 'call_earnings' || tx.tx_type === 'receive_call_income') { 
@@ -3301,6 +3389,49 @@ export const apiWallet = {
     });
   },
 
+  async deductCoins(coinsToDeduct, txType = 'buy_service', description = '') {
+    const uid = getUserId();
+    const amount = Math.abs(Number(coinsToDeduct) || 0);
+    if (amount <= 0) return { success: false, error: 'Invalid amount' };
+
+    const current = await this.getBalance();
+    if (current.coins < amount) {
+      return { success: false, error: 'INSUFFICIENT_BALANCE', currentCoins: current.coins };
+    }
+
+    const newCoins = current.coins - amount;
+    safeStorage.setItem('vlive_user_coins', String(newCoins));
+
+    try {
+      if (uid && uid !== 'me' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(uid))) {
+        await supabase.from('profiles').update({ coins: newCoins, user_coins: newCoins }).eq('id', uid);
+        await supabase.from('wallets').upsert({
+          user_id: uid,
+          coins: newCoins,
+          usdt_balance: current.usdt_balance || 0,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+
+        await supabase.from('transactions').insert([{
+          user_id: uid,
+          tx_type: txType,
+          amount_coins: -amount,
+          amount_usdt: 0,
+          status: 'Completed',
+          description: description || `کاهش ${amount} سکه برای ${txType}`
+        }]);
+      }
+    } catch (e) {
+      console.warn('deductCoins error:', e);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('vlive_balance_updated', { detail: { coins: newCoins, userId: uid } }));
+    }
+
+    return { success: true, newCoins };
+  },
+
   async addCoins(coinsToAdd, priceUsdt, description) {
     const uid = getUserId();
     if (!uid) return { success: false, error: 'Unauthorized' };
@@ -3310,7 +3441,7 @@ export const apiWallet = {
     return { success: true, newCoins: current.coins };
   },
 
-  async claimDailyBonus() {
+  async claimDailyBonus(currentStreak = 1, bonusAmount = 10) {
     const uid = getUserId() || 'me';
     const now = Date.now();
     const storageKey = `vlive_last_daily_gift_${uid}`;
@@ -3322,9 +3453,9 @@ export const apiWallet = {
       return { success: false, error: 'Already claimed today', remainingMs };
     }
 
-    const bonusCoins = 50;
+    const amountToAdd = Number(bonusAmount) > 0 ? Number(bonusAmount) : 10;
     const current = await this.getBalance();
-    const newCoins = (current.coins || 0) + bonusCoins;
+    const newCoins = (current.coins || 0) + amountToAdd;
 
     safeStorage.setItem(storageKey, String(now));
     safeStorage.setItem('vlive_user_coins', String(newCoins));
@@ -3339,13 +3470,14 @@ export const apiWallet = {
           updated_at: new Date().toISOString()
         }, { onConflict: 'user_id' });
 
-        await supabase.from('transactions').insert({
+        await supabase.from('transactions').insert([{
           user_id: uid,
           tx_type: 'buy_coins',
-          amount_coins: bonusCoins,
+          amount_coins: amountToAdd,
           amount_usdt: 0,
-          description: 'Daily login reward / هدیه ورود روزانه'
-        });
+          status: 'Completed',
+          description: `Daily login reward (+${amountToAdd} Coins) / هدیه ورود روزانه (${amountToAdd} سکه)`
+        }]);
       }
     } catch (e) {
       console.warn('claimDailyBonus DB update error:', e);
@@ -3353,10 +3485,10 @@ export const apiWallet = {
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('vlive_balance_updated', { detail: { coins: newCoins, userId: uid } }));
-      window.dispatchEvent(new CustomEvent('vlive_daily_reward_claimed', { detail: { timestamp: now, bonusCoins, newCoins } }));
+      window.dispatchEvent(new CustomEvent('vlive_daily_reward_claimed', { detail: { timestamp: now, bonusCoins: amountToAdd, newCoins } }));
     }
 
-    return { success: true, bonusCoins, newCoins, nextClaimTs: now + TWENTY_FOUR_HOURS };
+    return { success: true, bonusCoins: amountToAdd, newCoins, nextClaimTs: now + TWENTY_FOUR_HOURS };
   },
 
   async spinWheel() {
