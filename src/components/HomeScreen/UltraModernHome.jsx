@@ -710,17 +710,17 @@ export default function UltraModernHome({
                   <button
                     key={f.id}
                     onClick={() => setActiveFilter(f.id)}
-                    className={`px-2.5 py-1 rounded-xl text-[10.5px] font-bold transition-all whitespace-nowrap flex items-center gap-1 ${
+                    title={f.label}
+                    className={`p-2 rounded-xl text-[10.5px] font-bold transition-all whitespace-nowrap flex items-center justify-center ${
                       isSelected
-                        ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-md scale-[1.02]'
+                        ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-md scale-[1.05]'
                         : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 border border-white/5'
                     }`}
                   >
                     {f.isDot && (
-                      <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-400 animate-pulse'}`} />
+                      <span className={`w-2.5 h-2.5 rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-400 animate-pulse'}`} />
                     )}
-                    {IconComp && <IconComp className={`w-3 h-3 ${isSelected ? 'text-white' : 'text-slate-400'}`} />}
-                    <span>{f.label}</span>
+                    {IconComp && <IconComp className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-slate-400'}`} />}
                   </button>
                 );
               })}

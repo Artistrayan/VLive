@@ -214,18 +214,18 @@ export default function GiftBoxTab({
           </div>
         </div>
 
-        {/* 2 MAIN TABS SELECTOR */}
+        {/* 2 MAIN TABS SELECTOR (PURE ICON-BASED) */}
         <div className="mt-5 grid grid-cols-2 gap-2 bg-slate-950/90 p-1.5 rounded-2xl border border-slate-800/80">
           <button
             onClick={() => setSubTab('gifts')}
+            title={loc('هدایا و جوایز', 'Gifts & Daily Rewards')}
             className={`py-3 px-4 rounded-xl font-black text-xs transition-all duration-300 flex items-center justify-center gap-2 ${
               subTab === 'gifts'
                 ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-[0_0_20px_rgba(236,72,153,0.5)] scale-[1.02]'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
             }`}
           >
-            <Gift className="w-4 h-4" />
-            <span>{loc('هدایا و جوایز', 'Gifts & Daily Rewards')}</span>
+            <Gift className="w-5 h-5" />
             {dailyStatus.canClaim && (
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
             )}
@@ -233,14 +233,14 @@ export default function GiftBoxTab({
 
           <button
             onClick={() => setSubTab('assets')}
+            title={loc('دارایی‌های من و تاریخچه', 'My Assets & History')}
             className={`py-3 px-4 rounded-xl font-black text-xs transition-all duration-300 flex items-center justify-center gap-2 ${
               subTab === 'assets'
                 ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 shadow-[0_0_20px_rgba(245,158,11,0.5)] scale-[1.02]'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
             }`}
           >
-            <Wallet className="w-4 h-4" />
-            <span>{loc('دارایی‌های من و تاریخچه', 'My Assets & History')}</span>
+            <Wallet className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -639,27 +639,29 @@ export default function GiftBoxTab({
                 </h3>
               </div>
 
-              {/* History Sub-tab toggles */}
+              {/* History Sub-tab toggles (Icon-based) */}
               <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
                 <button
                   onClick={() => setHistorySubTab('claims')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                  title={loc('تاریخچه دریافت هدایا', 'Claim History')}
+                  className={`p-2 rounded-lg text-xs font-bold transition ${
                     historySubTab === 'claims'
                       ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  {loc('تاریخچه دریافت هدایا', 'Claim History')}
+                  <Gift className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setHistorySubTab('spending')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                  title={loc('تاریخچه خرج کردن سکه', 'Spending History')}
+                  className={`p-2 rounded-lg text-xs font-bold transition ${
                     historySubTab === 'spending'
                       ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  {loc('تاریخچه خرج کردن سکه', 'Spending History')}
+                  <Coins className="w-4 h-4" />
                 </button>
               </div>
             </div>

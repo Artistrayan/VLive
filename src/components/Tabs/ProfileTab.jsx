@@ -1206,10 +1206,7 @@ export default function ProfileTab(props) {
                   <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/40 group-hover:scale-110 transition-transform shrink-0">
                     <Image className="w-4 h-4" />
                   </div>
-                  <div className="text-right">
-                    <h4 className="text-xs font-black text-white group-hover:text-purple-300 transition">{window.loc('عکس‌ها', 'Photos')}</h4>
-                    <span className="text-[10px] text-slate-400">{window.loc('گالری تصاویر', 'Image Gallery')}</span>
-                  </div>
+                  <h4 className="text-xs font-black text-white group-hover:text-purple-300 transition">{window.loc('عکس‌ها', 'Photos')}</h4>
                 </div>
                 <span className="text-xs font-black text-purple-300 font-mono bg-purple-950/80 px-2.5 py-0.5 rounded-full border border-purple-500/40 shadow-inner">
                   {formatNum(galleryPhotos.length)}
@@ -1225,10 +1222,7 @@ export default function ProfileTab(props) {
                   <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/40 group-hover:scale-110 transition-transform shrink-0">
                     <Video className="w-4 h-4" />
                   </div>
-                  <div className="text-right">
-                    <h4 className="text-xs font-black text-white group-hover:text-rose-300 transition">{window.loc('ویدیوها', 'Videos')}</h4>
-                    <span className="text-[10px] text-slate-400">{window.loc('ویدیوهای کوتاه', 'Short Videos')}</span>
-                  </div>
+                  <h4 className="text-xs font-black text-white group-hover:text-rose-300 transition">{window.loc('ویدیوها', 'Videos')}</h4>
                 </div>
                 <span className="text-xs font-black text-rose-300 font-mono bg-rose-950/80 px-2.5 py-0.5 rounded-full border border-rose-500/40 shadow-inner">
                   {formatNum(galleryVideos.length)}

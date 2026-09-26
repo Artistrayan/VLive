@@ -1295,16 +1295,27 @@ export default function WalletTab(props) {
                           </div>
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => {
-                                setCreatorFollowersList(prev => prev.map(x => x.id === f.id ? { ...x, isFollowing: !x.isFollowing } : x));
-                                showToast(f.isFollowing ? window.loc('انجام شد', 'done') : window.loc('دنبال کردن متقابل فعال گردید', 'Cross-tracking is enabled'));
+                              onClick={async () => {
+                                const nextFollowing = !f.isFollowing;
+                                if (nextFollowing) {
+                                  await apiProfile.followUser(f);
+                                  showToast(window.loc('✓ فالو بک با موفقیت انجام شد', '✓ Followed back successfully'));
+                                } else {
+                                  await apiProfile.unfollowUser(f.id);
+                                  showToast(window.loc('✓ لغو دنبال کردن (آن‌فالو) انجام شد', '✓ Unfollowed successfully'));
+                                }
+                                setCreatorFollowersList(prev => prev.map(x => x.id === f.id ? { ...x, isFollowing: nextFollowing } : x));
                               }}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${f.isFollowing ? 'bg-slate-800 text-slate-400' : 'bg-purple-600 text-white'}`}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm active:scale-95 ${
+                                f.isFollowing 
+                                  ? 'bg-slate-800 hover:bg-rose-950/70 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-500/40' 
+                                  : 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-pink-500/20'
+                              }`}
                             >
-                              {f.isFollowing ? window.loc('دنبال شده', 'Followed') : window.loc('دنبال کردن متقابل 👥', 'Cross-following 👥')}
+                              {f.isFollowing ? window.loc('آن‌فالو', 'Unfollow') : window.loc('فالو بک', 'Follow Back')}
                             </button>
                             <button
-                              onClick={() => showToast(window.loc('کاربر بلاک گردید', 'The user was blocked'))}
+                              onClick={() => showToast(window.loc('کاربر مسدود شد', 'The user was blocked'))}
                               className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-rose-950 text-rose-400 text-xs font-bold border border-slate-800"
                             >
                               {window.loc('بلاک', 'Block')}
