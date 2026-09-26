@@ -371,8 +371,8 @@ export default function GiftBoxTab({
                   <Sparkles className="w-4 h-4 text-slate-950 animate-spin" style={{ animationDuration: '6s' }} />
                   <span>
                     {loc(
-                      `دریافت هدیه روز ${dailyStatus.currentDay} (${dailyStatus.todayReward.title})`,
-                      `Claim Day ${dailyStatus.currentDay} Gift (${dailyStatus.todayReward.titleEn || dailyStatus.todayReward.title})`
+                      `دریافت هدیه روز ${dailyStatus.currentDay}`,
+                      `Claim Day ${dailyStatus.currentDay}`
                     )}
                   </span>
                 </button>
@@ -428,9 +428,8 @@ export default function GiftBoxTab({
                             {loc(quest.title, quest.titleEn || quest.title)}
                           </h4>
                         </div>
-                        <div className="text-[11px] text-amber-400 font-black flex items-center gap-1">
-                          <span>{loc('پاداش:', 'Reward:')}</span>
-                          <span className="px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                        <div className="text-[11px] font-black flex items-center gap-1">
+                          <span className="px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300">
                             {loc(quest.rewardText, quest.rewardTextEn || quest.rewardText)}
                           </span>
                         </div>
@@ -467,7 +466,7 @@ export default function GiftBoxTab({
                           className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 text-xs font-black shadow-md hover:scale-105 active:scale-95 transition flex items-center gap-1.5 animate-pulse"
                         >
                           <Sparkles className="w-3.5 h-3.5" />
-                          <span>{loc('دریافت پاداش', 'Claim')}</span>
+                          <span>{loc('دریافت', 'Claim')}</span>
                         </button>
                       ) : (
                         <span className="px-3 py-1 rounded-xl bg-slate-900 text-slate-500 text-xs font-medium">
@@ -506,10 +505,10 @@ export default function GiftBoxTab({
 
               <div>
                 <span className="text-xs text-slate-400 font-medium block">
-                  {loc('موجودی قلب‌های مچ', 'Match Hearts Balance')}
+                  {loc('موجودی مچ', 'Match Balance')}
                 </span>
                 <div className="text-3xl font-black text-white font-mono mt-1">
-                  {userAssets.hearts} <span className="text-sm font-sans font-bold text-rose-400">{loc('قلب ❤️', 'Hearts ❤️')}</span>
+                  {userAssets.hearts} <span className="text-sm font-sans font-bold text-rose-400">❤️</span>
                 </div>
               </div>
 
@@ -535,10 +534,10 @@ export default function GiftBoxTab({
 
               <div>
                 <span className="text-xs text-slate-400 font-medium block">
-                  {loc('کوپن تماس تصویری', 'Video Call Vouchers')}
+                  {loc('کوپن تماس', 'Call Vouchers')}
                 </span>
                 <div className="text-3xl font-black text-white font-mono mt-1">
-                  {userAssets.cameras} <span className="text-sm font-sans font-bold text-cyan-400">{loc('دوربین 📹', 'Cameras 📹')}</span>
+                  {userAssets.cameras} <span className="text-sm font-sans font-bold text-cyan-400">📹</span>
                 </div>
               </div>
 
@@ -585,7 +584,7 @@ export default function GiftBoxTab({
                 ) : (
                   <div className="mt-1">
                     <div className="text-2xl font-black text-slate-300 font-mono">
-                      {userAssets.vipPasses} <span className="text-sm font-sans font-bold text-amber-400">{loc('کارت فعال‌نشده', 'Passes')}</span>
+                      {userAssets.vipPasses} <span className="text-sm font-sans font-bold text-amber-400">👑</span>
                     </div>
                   </div>
                 )}
@@ -624,9 +623,9 @@ export default function GiftBoxTab({
                 🪙
               </div>
               <div>
-                <span className="text-xs text-slate-400">{loc('موجودی سکه کیف پول', 'Coin Wallet Balance')}</span>
+                <span className="text-xs text-slate-400">{loc('موجودی کیف پول', 'Wallet Balance')}</span>
                 <div className="text-lg font-black text-white font-mono">
-                  {(userCoins || 0).toLocaleString()} {loc('سکه', 'coins')}
+                  🪙 {(userCoins || 0).toLocaleString()}
                 </div>
               </div>
             </div>
@@ -639,7 +638,7 @@ export default function GiftBoxTab({
               }}
               className="px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-black text-xs hover:bg-amber-500/30 transition"
             >
-              {loc('شارژ سکه', 'Recharge Coins')}
+              {loc('شارژ', 'Recharge')}
             </button>
           </div>
 
@@ -769,7 +768,7 @@ export default function GiftBoxTab({
                       </div>
 
                       <span className="font-mono font-black text-rose-400 text-xs">
-                        -{item.amount} {item.unit === 'voucher' ? loc('کوپن', 'voucher') : item.unit === 'heart' ? loc('قلب', 'heart') : loc('سکه', 'coins')}
+                        -{item.amount} {item.unit === 'voucher' ? '📹' : item.unit === 'heart' ? '❤️' : '🪙'}
                       </span>
                     </div>
                   ))

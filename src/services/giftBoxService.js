@@ -34,10 +34,10 @@ export const DAILY_REWARD_7_DAYS = [
     coins: 0,
     vip24h: 0,
     icon: '❤️',
-    title: '۳ عدد قلب',
-    titleEn: '3 Hearts',
-    desc: 'اتصال مستقیم به بخش Match برای مچ‌زدن',
-    descEn: 'Connected to Match for free swipes/likes',
+    title: '۳ ❤️',
+    titleEn: '3 ❤️',
+    desc: 'Match ❤️',
+    descEn: 'Match ❤️',
     actionType: 'match'
   },
   {
@@ -47,10 +47,10 @@ export const DAILY_REWARD_7_DAYS = [
     coins: 0,
     vip24h: 0,
     icon: '📹',
-    title: '۱ عدد دوربین فیلمبرداری',
-    titleEn: '1 Video Camera Voucher',
-    desc: 'تماس تصویری اختیاری ۱ دقیقه رایگان',
-    descEn: '1-minute optional free video call voucher',
+    title: '۱ 📹',
+    titleEn: '1 📹',
+    desc: 'Video Call 📹',
+    descEn: 'Video Call 📹',
     actionType: 'video_call'
   },
   {
@@ -60,10 +60,10 @@ export const DAILY_REWARD_7_DAYS = [
     coins: 10,
     vip24h: 0,
     icon: '🪙',
-    title: '۱۰ سکه',
-    titleEn: '10 Coins',
-    desc: 'افزایش موجودی کیف پول سکه',
-    descEn: 'Added to your coin balance',
+    title: '۱۰ 🪙',
+    titleEn: '10 🪙',
+    desc: 'Coins 🪙',
+    descEn: 'Coins 🪙',
     actionType: 'coins'
   },
   {
@@ -73,10 +73,10 @@ export const DAILY_REWARD_7_DAYS = [
     coins: 15,
     vip24h: 0,
     icon: '🪙',
-    title: '۱۵ سکه',
-    titleEn: '15 Coins',
-    desc: 'افزایش موجودی کیف پول سکه',
-    descEn: 'Added to your coin balance',
+    title: '۱۵ 🪙',
+    titleEn: '15 🪙',
+    desc: 'Coins 🪙',
+    descEn: 'Coins 🪙',
     actionType: 'coins'
   },
   {
@@ -86,10 +86,10 @@ export const DAILY_REWARD_7_DAYS = [
     coins: 0,
     vip24h: 0,
     icon: '📹❤️',
-    title: '۱ عدد دوربین فیلمبرداری + ۳ عدد قلب',
-    titleEn: '1 Video Camera + 3 Hearts',
-    desc: '۱ کوپن تماس تصویری + ۳ شانس مچ',
-    descEn: '1 video call voucher + 3 match hearts',
+    title: '۱ 📹 + ۳ ❤️',
+    titleEn: '1 📹 + 3 ❤️',
+    desc: 'Combo',
+    descEn: 'Combo',
     actionType: 'combo'
   },
   {
@@ -99,10 +99,10 @@ export const DAILY_REWARD_7_DAYS = [
     coins: 40,
     vip24h: 0,
     icon: '🪙',
-    title: '۴۰ سکه',
-    titleEn: '40 Coins',
-    desc: 'افزایش فوق‌العاده موجودی سکه',
-    descEn: 'Major coin balance boost',
+    title: '۴۰ 🪙',
+    titleEn: '40 🪙',
+    desc: 'Coins 🪙',
+    descEn: 'Coins 🪙',
     actionType: 'coins'
   },
   {
@@ -112,10 +112,10 @@ export const DAILY_REWARD_7_DAYS = [
     coins: 0,
     vip24h: 1,
     icon: '👑📹',
-    title: 'اشتراک VIP ۲۴ ساعته + ۱ عدد دوربین فیلمبرداری',
-    titleEn: '24h VIP Pass + 1 Video Camera',
-    desc: '۲۴ ساعت استفاده از کلیه امکانات VIP + ۱ تماس ویدئویی',
-    descEn: '24h full VIP access + 1 video call voucher',
+    title: 'VIP 👑 + ۱ 📹',
+    titleEn: 'VIP 👑 + 1 📹',
+    desc: 'VIP + Video Call',
+    descEn: 'VIP + Video Call',
     actionType: 'vip_combo'
   }
 ];
@@ -124,22 +124,22 @@ export const DAILY_REWARD_7_DAYS = [
 export const ACTIVITY_QUESTS = [
   {
     id: 'quest_online_20m',
-    title: '۲۰ دقیقه داخل برنامه آنلاین باشه',
+    title: '۲۰ دقیقه آنلاین در برنامه',
     titleEn: 'Stay online for 20 minutes',
     reward: { hearts: 2, coins: 0, cameras: 0, vip24h: 0 },
-    rewardText: '۲ عدد قلب ❤️',
-    rewardTextEn: '2 Hearts ❤️',
+    rewardText: '۲ ❤️',
+    rewardTextEn: '2 ❤️',
     target: 20,
     unit: 'min',
     metric: 'onlineMinutes'
   },
   {
     id: 'quest_follow_10_streamers',
-    title: '۱۰ تا کاربر استریم فالو کنه',
+    title: 'فالو کردن ۱۰ استریمر',
     titleEn: 'Follow 10 streamers',
     reward: { hearts: 0, coins: 20, cameras: 0, vip24h: 0 },
-    rewardText: '۲۰ سکه 🪙',
-    rewardTextEn: '20 Coins 🪙',
+    rewardText: '۲۰ 🪙',
+    rewardTextEn: '20 🪙',
     target: 10,
     unit: 'streamers',
     metric: 'followedStreamers'
@@ -149,8 +149,8 @@ export const ACTIVITY_QUESTS = [
     title: 'اولین خرید از برنامه',
     titleEn: 'First in-app purchase',
     reward: { hearts: 0, coins: 50, cameras: 0, vip24h: 0 },
-    rewardText: '۵۰ سکه 🪙',
-    rewardTextEn: '50 Coins 🪙',
+    rewardText: '۵۰ 🪙',
+    rewardTextEn: '50 🪙',
     target: 1,
     unit: 'purchase',
     metric: 'hasMadePurchase'
@@ -160,8 +160,8 @@ export const ACTIVITY_QUESTS = [
     title: 'اولین خرید اشتراک VIP',
     titleEn: 'First VIP subscription purchase',
     reward: { hearts: 0, coins: 100, cameras: 0, vip24h: 0 },
-    rewardText: '۱۰۰ سکه 🪙',
-    rewardTextEn: '100 Coins 🪙',
+    rewardText: '۱۰۰ 🪙',
+    rewardTextEn: '100 🪙',
     target: 1,
     unit: 'vip_purchase',
     metric: 'hasBoughtVip'
@@ -171,19 +171,19 @@ export const ACTIVITY_QUESTS = [
     title: '۱۲۰ دقیقه تماس تصویری',
     titleEn: '120 minutes of video calls',
     reward: { hearts: 0, coins: 0, cameras: 1, vip24h: 0 },
-    rewardText: '۱ عدد دوربین فیلمبرداری 📹',
-    rewardTextEn: '1 Video Camera Voucher 📹',
+    rewardText: '۱ 📹',
+    rewardTextEn: '1 📹',
     target: 120,
     unit: 'min',
     metric: 'videoCallMinutes'
   },
   {
     id: 'quest_match_3_times',
-    title: '۳ تا match موفق',
+    title: '۳ مچ موفق در برنامه',
     titleEn: 'Complete 3 matches',
     reward: { hearts: 0, coins: 0, cameras: 1, vip24h: 0 },
-    rewardText: '۱ عدد دوربین فیلمبرداری 📹',
-    rewardTextEn: '1 Video Camera Voucher 📹',
+    rewardText: '۱ 📹',
+    rewardTextEn: '1 📹',
     target: 3,
     unit: 'matches',
     metric: 'matchesCount'
