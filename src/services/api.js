@@ -1115,10 +1115,37 @@ export const apiProfile = {
   },
 
   // ==================== REAL FOLLOW / UNFOLLOW SYSTEM ====================
+  _deduplicateUserList(list) {
+    if (!Array.isArray(list)) return [];
+    const seen = new Set();
+    const result = [];
+    for (const u of list) {
+      if (!u) continue;
+      const uid = String(u.id || '').trim().toLowerCase().replace(/^@/, '');
+      const uname = String(u.username || '').trim().toLowerCase().replace(/^@/, '');
+      const key = uid || uname;
+      if (!key) continue;
+      if (seen.has(key) || (uname && seen.has(uname)) || (uid && seen.has(uid))) {
+        continue;
+      }
+      if (uid) seen.add(uid);
+      if (uname) seen.add(uname);
+      result.push(u);
+    }
+    return result;
+  },
+
   async followUser(targetUser) {
     if (!targetUser) return { success: false };
     const targetId = targetUser.id || targetUser.username;
     if (!targetId) return { success: false };
+
+    // Idempotency check: If already followed, return immediately without duplicate count increment or duplicate tickets
+    if (this.isUserFollowed(targetId)) {
+      const currentFollowing = this.getFollowingList();
+      return { success: true, isFollowing: true, alreadyFollowed: true, followingCount: currentFollowing.length };
+    }
+
     const uid = getUserId();
     const myUid = uid || `user_${Date.now()}`;
     const myName = localStorage.getItem('vlive_user_name') || 'کاربر';
@@ -1127,34 +1154,37 @@ export const apiProfile = {
     const myLevel = Number(localStorage.getItem('vlive_user_level') || 1);
 
     try {
-      // 1. Add to current user's following list
-      let following = [];
-      try {
-        const stored = localStorage.getItem('vlive_user_following_list');
-        if (stored) following = JSON.parse(stored);
-      } catch (e) {
-        following = [];
-      }
+      // 1. Add to current user's following list (deduplicated)
+      let following = this.getFollowingList();
 
       const cleanTarget = {
         id: targetId,
         username: targetUser.username || targetId,
         name: targetUser.name || targetUser.fullName || targetUser.username || targetId,
-        avatar: targetUser.avatar || targetUser.thumbnail || '',
+        avatar: targetUser.avatar || targetUser.thumbnail || targetUser.userAvatar || '',
         role: targetUser.role || (targetUser.isStreamer ? 'Streamer' : 'User'),
-        level: targetUser.level || 1,
+        level: targetUser.level || targetUser.user_level || 1,
         isStreamer: Boolean(targetUser.isStreamer || targetUser.is_streamer),
         isLive: Boolean(targetUser.isLive || targetUser.live),
         followedAt: new Date().toISOString()
       };
 
-      if (!following.some(u => String(u.id) === String(targetId) || String(u.username).toLowerCase() === String(cleanTarget.username).toLowerCase())) {
-        following.unshift(cleanTarget);
-        localStorage.setItem('vlive_user_following_list', JSON.stringify(following));
-        localStorage.setItem('vlive_user_following', String(following.length));
-      }
+      const targetKey = String(targetId).trim().toLowerCase().replace(/^@/, '');
+      const cleanUsernameKey = String(cleanTarget.username).trim().toLowerCase().replace(/^@/, '');
 
-      // 2. Add follower entry to TARGET user's followers list
+      following = following.filter(u => {
+        const uId = String(u.id || '').trim().toLowerCase().replace(/^@/, '');
+        const uName = String(u.username || '').trim().toLowerCase().replace(/^@/, '');
+        return uId !== targetKey && uName !== targetKey && uName !== cleanUsernameKey;
+      });
+
+      following.unshift(cleanTarget);
+      following = this._deduplicateUserList(following);
+
+      localStorage.setItem('vlive_user_following_list', JSON.stringify(following));
+      localStorage.setItem('vlive_user_following', String(following.length));
+
+      // 2. Add follower entry to TARGET user's followers list (deduplicated)
       const followerEntry = {
         id: myUid,
         username: myUsername,
@@ -1167,6 +1197,9 @@ export const apiProfile = {
         timestamp: Date.now()
       };
 
+      const myKey = String(myUid).trim().toLowerCase().replace(/^@/, '');
+      const myUsernameKey = String(myUsername).trim().toLowerCase().replace(/^@/, '');
+
       const targetFollowersKey = `vlive_user_followers_${targetId}`;
       let targetFollowers = [];
       try {
@@ -1175,12 +1208,22 @@ export const apiProfile = {
       } catch (e) {
         targetFollowers = [];
       }
-      targetFollowers = targetFollowers.filter(u => String(u.id) !== String(myUid) && String(u.username).toLowerCase() !== String(myUsername).toLowerCase());
+
+      targetFollowers = targetFollowers.filter(u => {
+        const uId = String(u.id || '').trim().toLowerCase().replace(/^@/, '');
+        const uName = String(u.username || '').trim().toLowerCase().replace(/^@/, '');
+        return uId !== myKey && uName !== myUsernameKey;
+      });
+
       targetFollowers.unshift(followerEntry);
+      targetFollowers = this._deduplicateUserList(targetFollowers);
+
       localStorage.setItem(targetFollowersKey, JSON.stringify(targetFollowers.slice(0, 100)));
 
-      // Also if target is current profile, keep followers list updated
-      localStorage.setItem('vlive_user_followers_list', JSON.stringify(targetFollowers.slice(0, 100)));
+      // If target is current user profile, also update main followers list
+      if (String(targetId) === String(myUid) || String(targetId).toLowerCase() === String(myUsername).toLowerCase()) {
+        localStorage.setItem('vlive_user_followers_list', JSON.stringify(targetFollowers.slice(0, 100)));
+      }
 
       // 3. Increment target user followers count in Supabase
       if (targetUser.id) {
@@ -1196,16 +1239,26 @@ export const apiProfile = {
         await supabase.from('profiles').update({ following_count: nextFollowing }).eq('id', uid);
       }
 
-      // 5. Persist follow record permanently in Supabase support_tickets closed log
+      // 5. Persist follow record in Supabase support_tickets (only 1 record per pair)
       try {
         const targetUuid = (await resolveProfileUuid(targetId)) || targetId;
         if (targetUuid && myUid) {
-          await supabase.from('support_tickets').insert([{
-            user_id: myUid,
-            subject: `FOLLOW:${myUid}:${targetUuid}`,
-            message: JSON.stringify(followerEntry),
-            status: 'closed'
-          }]);
+          const subjectKey = `FOLLOW:${myUid}:${targetUuid}`;
+          const { data: existingTicket } = await supabase
+            .from('support_tickets')
+            .select('id')
+            .eq('subject', subjectKey)
+            .limit(1)
+            .maybeSingle();
+
+          if (!existingTicket) {
+            await supabase.from('support_tickets').insert([{
+              user_id: myUid,
+              subject: subjectKey,
+              message: JSON.stringify(followerEntry),
+              status: 'closed'
+            }]);
+          }
         }
       } catch (dbErr) {}
 
@@ -1227,27 +1280,50 @@ export const apiProfile = {
     const myUsername = localStorage.getItem('vlive_username') || localStorage.getItem('vlive_current_username') || 'user';
 
     try {
-      let following = [];
-      try {
-        const stored = localStorage.getItem('vlive_user_following_list');
-        if (stored) following = JSON.parse(stored);
-      } catch (e) {
-        following = [];
-      }
+      let following = this.getFollowingList();
+      const targetKey = String(targetId).trim().toLowerCase().replace(/^@/, '');
 
-      const updated = following.filter(u => String(u.id) !== String(targetId) && String(u.username).toLowerCase() !== String(targetId).toLowerCase());
-      localStorage.setItem('vlive_user_following_list', JSON.stringify(updated));
-      localStorage.setItem('vlive_user_following', String(updated.length));
+      const updated = following.filter(u => {
+        const uId = String(u.id || '').trim().toLowerCase().replace(/^@/, '');
+        const uName = String(u.username || '').trim().toLowerCase().replace(/^@/, '');
+        return uId !== targetKey && uName !== targetKey;
+      });
+
+      const deduplicatedFollowing = this._deduplicateUserList(updated);
+      localStorage.setItem('vlive_user_following_list', JSON.stringify(deduplicatedFollowing));
+      localStorage.setItem('vlive_user_following', String(deduplicatedFollowing.length));
 
       // Remove from target user followers list
+      const myKey = String(myUid || '').trim().toLowerCase().replace(/^@/, '');
+      const myUsernameKey = String(myUsername || '').trim().toLowerCase().replace(/^@/, '');
+
       const targetFollowersKey = `vlive_user_followers_${targetId}`;
       let targetFollowers = [];
       try {
         const st = localStorage.getItem(targetFollowersKey);
         if (st) targetFollowers = JSON.parse(st);
       } catch (e) {}
-      targetFollowers = targetFollowers.filter(u => String(u.id) !== String(myUid) && String(u.username).toLowerCase() !== String(myUsername).toLowerCase());
-      localStorage.setItem(targetFollowersKey, JSON.stringify(targetFollowers));
+
+      targetFollowers = targetFollowers.filter(u => {
+        const uId = String(u.id || '').trim().toLowerCase().replace(/^@/, '');
+        const uName = String(u.username || '').trim().toLowerCase().replace(/^@/, '');
+        return uId !== myKey && uName !== myUsernameKey;
+      });
+
+      const deduplicatedTargetFollowers = this._deduplicateUserList(targetFollowers);
+      localStorage.setItem(targetFollowersKey, JSON.stringify(deduplicatedTargetFollowers));
+
+      // Clean up tickets in Supabase
+      try {
+        const targetUuid = (await resolveProfileUuid(targetId)) || targetId;
+        if (targetUuid && myUid) {
+          const subjectKey = `FOLLOW:${myUid}:${targetUuid}`;
+          await supabase
+            .from('support_tickets')
+            .delete()
+            .eq('subject', subjectKey);
+        }
+      } catch (e) {}
 
       // Decrement target user followers count in Supabase
       const { data: targetProfile } = await supabase.from('profiles').select('followers_count').eq('id', targetId).maybeSingle();
@@ -1269,7 +1345,7 @@ export const apiProfile = {
         window.dispatchEvent(new CustomEvent('vlive_follow_changed', { detail: { targetId, isFollowing: false } }));
       }
 
-      return { success: true, isFollowing: false, followingCount: updated.length };
+      return { success: true, isFollowing: false, followingCount: deduplicatedFollowing.length };
     } catch (e) {
       console.warn('apiProfile.unfollowUser error:', e);
       return { success: false };
@@ -1279,7 +1355,8 @@ export const apiProfile = {
   getFollowingList() {
     try {
       const stored = localStorage.getItem('vlive_user_following_list');
-      return stored ? JSON.parse(stored) : [];
+      const list = stored ? JSON.parse(stored) : [];
+      return this._deduplicateUserList(list);
     } catch (e) {
       return [];
     }
@@ -1292,12 +1369,12 @@ export const apiProfile = {
       const stored = localStorage.getItem(specificKey);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return this._deduplicateUserList(parsed);
       }
       const generalStored = localStorage.getItem('vlive_user_followers_list');
       if (generalStored) {
         const parsed = JSON.parse(generalStored);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) return this._deduplicateUserList(parsed);
       }
       return [];
     } catch (e) {
@@ -1320,10 +1397,12 @@ export const apiProfile = {
             try { return JSON.parse(r.message); } catch (e) { return null; }
           }).filter(Boolean);
 
-          if (fetchedFollowers.length > 0) {
+          const deduplicated = this._deduplicateUserList(fetchedFollowers);
+          if (deduplicated.length > 0) {
             const specificKey = `vlive_user_followers_${tid}`;
-            localStorage.setItem(specificKey, JSON.stringify(fetchedFollowers.slice(0, 100)));
-            return fetchedFollowers;
+            localStorage.setItem(specificKey, JSON.stringify(deduplicated.slice(0, 100)));
+            localStorage.setItem('vlive_user_followers_list', JSON.stringify(deduplicated.slice(0, 100)));
+            return deduplicated;
           }
         }
       }
@@ -1333,8 +1412,13 @@ export const apiProfile = {
 
   isUserFollowed(targetId) {
     if (!targetId) return false;
+    const tid = String(targetId).trim().toLowerCase().replace(/^@/, '');
     const following = this.getFollowingList();
-    return following.some(u => String(u.id) === String(targetId) || String(u.username).toLowerCase() === String(targetId).toLowerCase());
+    return following.some(u => {
+      const uId = String(u.id || '').trim().toLowerCase().replace(/^@/, '');
+      const uName = String(u.username || '').trim().toLowerCase().replace(/^@/, '');
+      return uId === tid || uName === tid;
+    });
   },
 
   // ==================== REAL PROFILE LIKES SYSTEM ====================

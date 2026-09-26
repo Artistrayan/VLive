@@ -619,9 +619,23 @@ export default function ProfileTab(props) {
       }
     };
     window.addEventListener('vlive_profile_liked', handleProfileLiked);
+
+    const handleFollowChanged = () => {
+      if (isMounted) {
+        const updatedFollowing = apiProfile.getFollowingList();
+        setFollowingList(updatedFollowing);
+        setUserFollowingCount(updatedFollowing.length);
+        const updatedFollowers = apiProfile.getFollowersList(uid);
+        setFollowersList(updatedFollowers);
+        setUserFollowersCount(updatedFollowers.length);
+      }
+    };
+    window.addEventListener('vlive_follow_changed', handleFollowChanged);
+
     return () => {
       isMounted = false;
       window.removeEventListener('vlive_profile_liked', handleProfileLiked);
+      window.removeEventListener('vlive_follow_changed', handleFollowChanged);
     };
   }, [currentUsername, props.currentUser, targetProfileId]);
 

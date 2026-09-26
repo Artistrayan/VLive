@@ -31,6 +31,7 @@ export default function UserProfileViewModal({
 
   // --- STATE FOR INTERACTION ---
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isSuperLiked, setIsSuperLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
@@ -173,22 +174,32 @@ export default function UserProfileViewModal({
   const totalMediaCount = publicPhotos.length + publicVideos.length;
 
   const toggleFollow = async () => {
+    if (isFollowLoading) return;
     const targetId = user.id || user.username;
+    if (!targetId) return;
+
+    setIsFollowLoading(true);
     const nextState = !isFollowing;
     setIsFollowing(nextState);
     setFollowersCount(prev => Math.max(0, nextState ? prev + 1 : prev - 1));
 
-    if (nextState) {
-      await apiProfile.followUser(user);
-    } else {
-      await apiProfile.unfollowUser(targetId);
-    }
+    try {
+      if (nextState) {
+        await apiProfile.followUser(user);
+      } else {
+        await apiProfile.unfollowUser(targetId);
+      }
 
-    onFollowToggle(user, nextState);
-    if (nextState) {
-      showToast(isFollowerOfCurrentUser ? window.loc(`✓ فالو بک با موفقیت انجام شد`, `✓ Followed back successfully`) : window.loc(`با موفقیت ${userName} را دنبال کردید 👤`, `You followed ${userName} 👤`));
-    } else {
-      showToast(window.loc(`لغو دنبال کردن انجام شد (آن‌فالو)`, `Unfollowed successfully`));
+      onFollowToggle?.(user, nextState);
+      if (nextState) {
+        showToast(isFollowerOfCurrentUser ? window.loc(`✓ فالو بک با موفقیت انجام شد`, `✓ Followed back successfully`) : window.loc(`با موفقیت ${userName} را دنبال کردید 👤`, `You followed ${userName} 👤`));
+      } else {
+        showToast(window.loc(`لغو دنبال کردن انجام شد (آن‌فالو)`, `Unfollowed successfully`));
+      }
+    } catch (err) {
+      console.warn('toggleFollow err:', err);
+    } finally {
+      setIsFollowLoading(false);
     }
   };
 
