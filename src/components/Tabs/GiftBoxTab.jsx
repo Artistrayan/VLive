@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Gift, Heart, Video, Sparkles, Coins, Crown, CheckCircle2,
   Clock, Flame, ArrowRight, ArrowLeft, Trophy, Users, Shield,
-  History, Wallet, Zap, ChevronRight, PlayCircle, Star, AlertCircle
+  History, Wallet, Zap, ChevronRight, PlayCircle, Star, AlertCircle,
+  Calendar, CalendarDays
 } from 'lucide-react';
 import { giftBoxService, DAILY_REWARD_7_DAYS, ACTIVITY_QUESTS } from '../../services/giftBoxService';
 import { safeStorage } from '../../utils/safeStorage';
@@ -251,90 +252,99 @@ export default function GiftBoxTab({
       {subTab === 'gifts' && (
         <div className="space-y-6">
           
-          {/* DAILY 7-DAY REWARDS CONTAINER */}
-          <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-5 sm:p-6 shadow-2xl space-y-5 relative overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-                  <Flame className="w-6 h-6 animate-pulse" />
+          {/* DAILY 7-DAY REWARDS CALENDAR CONTAINER */}
+          <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-4 sm:p-5 shadow-2xl space-y-3.5 relative overflow-hidden">
+            
+            {/* Calendar Header */}
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                  <CalendarDays className="w-4 h-4 text-amber-400" />
                 </div>
-                <h2 className="text-base font-black text-white flex items-center gap-2">
-                  <span>{loc('هدایای ورود روزانه', 'Daily Login Rewards')}</span>
-                  <span className="px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-400 text-[10px] font-bold border border-pink-500/30">
-                    {loc(`روز ${dailyStatus.currentDay} از ۷`, `Day ${dailyStatus.currentDay} of 7`)}
-                  </span>
-                </h2>
+                <div>
+                  <h2 className="text-xs sm:text-sm font-black text-white flex items-center gap-1.5">
+                    <span>{loc('تقویم جوایز ورود', 'Login Rewards Calendar')}</span>
+                  </h2>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950 border border-amber-500/30 text-[10px] font-bold text-amber-300">
+                <Flame className="w-3 h-3 text-amber-400 animate-pulse" />
+                <span>{loc(`روز ${dailyStatus.currentDay} از ۷`, `Day ${dailyStatus.currentDay} of 7`)}</span>
               </div>
             </div>
 
-            {/* 7 DAYS CARDS GRID */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
+            {/* 7 DAYS COMPACT CALENDAR GRID (7 COLUMNS) */}
+            <div className="grid grid-cols-7 gap-1 sm:gap-2 pt-1">
               {DAILY_REWARD_7_DAYS.map((dayItem) => {
                 const isPastClaimed = dayItem.day < dailyStatus.currentDay || (!dailyStatus.canClaim && dayItem.day === dailyStatus.currentDay);
                 const isCurrentReady = dailyStatus.canClaim && dayItem.day === dailyStatus.currentDay;
                 const isLocked = dayItem.day > dailyStatus.currentDay;
+                const isDay7 = dayItem.day === 7;
 
                 return (
                   <div
                     key={dayItem.day}
                     onClick={() => setSelectedDayDetail(dayItem)}
-                    className={`relative rounded-2xl p-3 flex flex-col items-center justify-between text-center transition-all duration-300 cursor-pointer min-h-[140px] ${
+                    title={loc(dayItem.title, dayItem.titleEn || dayItem.title)}
+                    className={`relative rounded-xl p-1.5 sm:p-2 flex flex-col items-center justify-between text-center transition-all duration-300 cursor-pointer h-24 sm:h-28 ${
                       isCurrentReady
-                        ? 'bg-gradient-to-b from-amber-500/25 via-slate-900 to-slate-900 border-2 border-amber-400 shadow-[0_0_25px_rgba(245,158,11,0.4)] scale-105'
+                        ? 'bg-gradient-to-b from-amber-500/30 via-slate-900 to-slate-900 border-2 border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.5)] scale-[1.04] z-10'
                         : isPastClaimed
-                        ? 'bg-slate-950/80 border border-emerald-500/40 text-slate-300'
-                        : 'bg-slate-950/60 border border-slate-800/80 opacity-75 hover:opacity-100 hover:border-slate-700'
+                        ? 'bg-slate-950/90 border border-emerald-500/40 text-slate-300'
+                        : isDay7
+                        ? 'bg-gradient-to-b from-amber-500/15 to-slate-950 border border-amber-500/40 opacity-90 hover:opacity-100'
+                        : 'bg-slate-950/70 border border-slate-800 opacity-70 hover:opacity-100 hover:border-slate-700'
                     }`}
                   >
-                    {/* Day Number Header */}
-                    <div className="w-full flex items-center justify-between text-[10px] font-bold text-slate-400 pb-1 border-b border-slate-800/50">
-                      <span>{loc(`روز ${dayItem.day}`, `Day ${dayItem.day}`)}</span>
-                      {isPastClaimed && (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      )}
-                      {isCurrentReady && (
-                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                      )}
-                      {isLocked && (
-                        <span className="text-slate-600">🔒</span>
-                      )}
+                    {/* Top: Day Header (Calendar Day Style) */}
+                    <div className={`w-full py-0.5 rounded-md text-[9px] sm:text-[10px] font-black leading-none ${
+                      isCurrentReady
+                        ? 'bg-amber-400 text-slate-950'
+                        : isPastClaimed
+                        ? 'bg-emerald-500/20 text-emerald-400'
+                        : isDay7
+                        ? 'bg-amber-500/20 text-amber-300'
+                        : 'bg-slate-900 text-slate-400'
+                    }`}>
+                      {loc(`روز ${dayItem.day}`, `D${dayItem.day}`)}
                     </div>
 
-                    {/* Big Item Visual */}
-                    <div className="my-2 relative flex flex-col items-center justify-center">
-                      <div className="text-2xl sm:text-3xl filter drop-shadow-md transform hover:scale-110 transition duration-300">
+                    {/* Center: Visual Emoji Icon & Amount Tag */}
+                    <div className="my-auto flex flex-col items-center justify-center">
+                      <span className="text-base sm:text-xl filter drop-shadow hover:scale-110 transition-transform">
                         {dayItem.icon}
-                      </div>
-                      {dayItem.day === 7 && (
-                        <span className="absolute -top-1 -right-2 px-1.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[8px] animate-pulse">
-                          VIP 👑
+                      </span>
+                      {dayItem.hearts > 0 && (
+                        <span className="text-[8px] font-mono font-black text-rose-300">
+                          +{dayItem.hearts}
+                        </span>
+                      )}
+                      {dayItem.cameras > 0 && (
+                        <span className="text-[8px] font-mono font-black text-cyan-300">
+                          +{dayItem.cameras}
+                        </span>
+                      )}
+                      {dayItem.coins > 0 && (
+                        <span className="text-[8px] font-mono font-black text-amber-300">
+                          +{dayItem.coins}
+                        </span>
+                      )}
+                      {dayItem.vip24h > 0 && (
+                        <span className="text-[7.5px] font-mono font-black text-amber-400 bg-amber-500/20 px-1 rounded-full">
+                          VIP
                         </span>
                       )}
                     </div>
 
-                    {/* Reward Title */}
-                    <div className="w-full">
-                      <span className={`text-[11px] font-black leading-tight block ${
-                        isCurrentReady ? 'text-amber-300' : isPastClaimed ? 'text-emerald-300' : 'text-slate-200'
-                      }`}>
-                        {loc(dayItem.title, dayItem.titleEn || dayItem.title)}
-                      </span>
-                    </div>
-
-                    {/* Bottom Status Tag */}
-                    <div className="mt-2 w-full pt-1">
+                    {/* Bottom Status Indicator */}
+                    <div className="w-full flex items-center justify-center pt-0.5">
                       {isCurrentReady ? (
-                        <span className="block w-full py-1 rounded-lg bg-amber-400 text-slate-950 font-black text-[9px] shadow-md animate-pulse">
-                          {loc('دریافت ✨', 'Claim ✨')}
-                        </span>
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
                       ) : isPastClaimed ? (
-                        <span className="block w-full py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold text-[9px]">
-                          {loc('دریافت شد ✓', 'Claimed ✓')}
-                        </span>
+                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                       ) : (
-                        <span className="block w-full py-0.5 text-slate-500 font-medium text-[9px]">
-                          {loc('قفل', 'Locked')}
-                        </span>
+                        <span className="text-[9px] text-slate-600">🔒</span>
                       )}
                     </div>
                   </div>
@@ -342,15 +352,23 @@ export default function GiftBoxTab({
               })}
             </div>
 
+            {/* Streak Progress Line */}
+            <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800">
+              <div
+                className="bg-gradient-to-r from-pink-500 via-purple-500 to-amber-400 h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, ((dailyStatus.currentDay - (dailyStatus.canClaim ? 1 : 0)) / 7) * 100)}%` }}
+              />
+            </div>
+
             {/* MAIN DAILY CLAIM ACTION AREA */}
-            <div className="pt-2">
+            <div className="pt-1">
               {dailyStatus.canClaim ? (
                 <button
                   onClick={handleClaimTodayReward}
                   disabled={isClaiming}
-                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-sm shadow-[0_0_30px_rgba(245,158,11,0.5)] hover:brightness-110 active:scale-98 transition flex items-center justify-center gap-2"
+                  className="w-full py-3 sm:py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(245,158,11,0.5)] hover:brightness-110 active:scale-98 transition flex items-center justify-center gap-2"
                 >
-                  <Sparkles className="w-5 h-5 text-slate-950 animate-spin" style={{ animationDuration: '6s' }} />
+                  <Sparkles className="w-4 h-4 text-slate-950 animate-spin" style={{ animationDuration: '6s' }} />
                   <span>
                     {loc(
                       `دریافت هدیه روز ${dailyStatus.currentDay} (${dailyStatus.todayReward.title})`,
@@ -359,16 +377,15 @@ export default function GiftBoxTab({
                   </span>
                 </button>
               ) : (
-                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-center space-y-1.5">
-                  <div className="flex items-center justify-center gap-2 text-emerald-400 font-bold text-xs">
+                <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 text-center flex items-center justify-between px-4">
+                  <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-xs">
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>{loc('هدیه امروز دریافت شد!', 'Today\'s daily reward claimed!')}</span>
+                    <span>{loc('هدیه امروز دریافت شد', 'Today\'s reward claimed')}</span>
                   </div>
                   {countdownText && (
-                    <div className="flex items-center justify-center gap-2 text-slate-400 text-xs font-mono">
+                    <div className="flex items-center gap-1.5 text-slate-400 text-xs font-mono">
                       <Clock className="w-3.5 h-3.5 text-amber-400" />
-                      <span>{loc('هدیه بعدی:', 'Next reward in:')}</span>
-                      <span className="font-bold text-amber-300 text-sm bg-slate-900 px-2.5 py-0.5 rounded-lg border border-slate-800">
+                      <span className="font-bold text-amber-300 text-xs bg-slate-900 px-2 py-0.5 rounded-lg border border-slate-800">
                         {countdownText}
                       </span>
                     </div>
