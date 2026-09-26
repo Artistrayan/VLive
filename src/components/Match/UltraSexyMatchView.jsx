@@ -201,39 +201,38 @@ export default function UltraSexyMatchView({
         <div className="inline-flex items-center p-1 rounded-full bg-slate-950/80 border border-rose-500/30 backdrop-blur-2xl shadow-[0_8px_25px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.1)] gap-1.5">
           <button
             onClick={() => setMatchMode('swipe')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full transition-all duration-300 text-xs font-black ${
+            title={loc('مچ اختصاصی', 'Ultra Match')}
+            className={`p-2 px-3.5 rounded-full transition-all duration-300 flex items-center justify-center ${
               matchMode === 'swipe' || matchMode === 'manual'
                 ? 'bg-gradient-to-r from-rose-600 via-pink-600 to-red-600 text-white shadow-[0_4px_18px_rgba(244,63,94,0.6),inset_0_1px_2px_rgba(255,255,255,0.4)] scale-105'
                 : 'text-slate-400 hover:text-pink-300'
             }`}
           >
-            <Flame className="w-4 h-4 fill-current drop-shadow-md text-pink-200" />
-            <span>{loc('مچ اختصاصی', 'Ultra Match')}</span>
+            <Flame className="w-5 h-5 fill-current drop-shadow-md text-pink-200" />
           </button>
 
           <button
             onClick={() => setMatchMode('radar')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full transition-all duration-300 text-xs font-black ${
+            title={loc('رادار زنده', 'Live Radar')}
+            className={`p-2 px-3.5 rounded-full transition-all duration-300 flex items-center justify-center ${
               matchMode === 'radar' || matchMode === 'random'
                 ? 'bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 shadow-[0_4px_18px_rgba(34,211,238,0.5)] scale-105'
                 : 'text-slate-400 hover:text-cyan-300'
             }`}
           >
-            <Radio className="w-4 h-4" />
-            <span>{loc('رادار زنده', 'Live Radar')}</span>
+            <Radio className="w-5 h-5" />
           </button>
         </div>
 
         {/* Quick Filter Pill Button */}
         <button
           onClick={() => setIsFilterSheetOpen(prev => !prev)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-slate-900/80 hover:bg-slate-800/90 border border-white/10 hover:border-rose-500/40 backdrop-blur-xl shadow-lg text-xs font-bold text-slate-300 transition-all active:scale-95"
+          className="flex items-center justify-center p-2.5 rounded-full bg-slate-900/80 hover:bg-slate-800/90 border border-white/10 hover:border-rose-500/40 backdrop-blur-xl shadow-lg text-slate-300 transition-all active:scale-95"
           title={loc('فیلترها و تنظیمات', 'Filters & Preferences')}
         >
-          <SlidersHorizontal className="w-3.5 h-3.5 text-rose-400" />
-          <span className="hidden sm:inline">{loc('فیلترها', 'Filters')}</span>
+          <SlidersHorizontal className="w-4 h-4 text-rose-400" />
           {(matchFilterVerifiedOnly || matchFilterOnlineOnly) && (
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse ml-1" />
           )}
         </button>
       </div>
@@ -518,30 +517,28 @@ export default function UltraSexyMatchView({
       {/* Left: “رد کردن” (Skip) – dark glass button with soft white border */}
       {/* Right: “قبول Match” (Accept) – glowing deep red-pink neon button with strong pulse effect */}
       {matchMode === 'swipe' && currentProfile && (
-        <div className="relative z-20 flex items-center justify-center gap-4 sm:gap-6 pt-2 pb-1 w-full max-w-sm mx-auto">
+        <div className="relative z-20 flex items-center justify-center gap-6 pt-2 pb-1 w-full max-w-xs mx-auto">
           
           {/* 1. LEFT BUTTON: "رد کردن" (Skip) */}
           <button
             onClick={triggerSkip}
-            className="flex-1 max-w-[170px] h-14 sm:h-16 rounded-2xl bg-slate-900/80 hover:bg-slate-800/90 border border-white/20 hover:border-white/40 text-white/90 backdrop-blur-2xl shadow-[0_12px_30px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.15)] flex items-center justify-center gap-2 font-black text-sm sm:text-base active:scale-95 hover:scale-[1.02] transition-all duration-200 group"
+            className="w-16 h-16 rounded-full bg-slate-900/90 hover:bg-slate-800/90 border border-white/20 hover:border-white/40 text-white/90 backdrop-blur-2xl shadow-[0_12px_30px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.15)] flex items-center justify-center active:scale-95 hover:scale-105 transition-all duration-200 group cursor-pointer"
             title={loc('رد کردن', 'Skip Profile')}
           >
-            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-rose-500/20 group-hover:text-rose-400 transition-colors">
-              <X className="w-5 h-5 stroke-[2.5]" />
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-rose-500/20 group-hover:text-rose-400 transition-colors">
+              <X className="w-6 h-6 stroke-[2.5]" />
             </div>
-            <span>{loc('رد کردن', 'Skip')}</span>
           </button>
 
           {/* 2. RIGHT BUTTON: "قبول Match" (Accept) */}
           <button
             onClick={triggerAccept}
-            className="flex-1 max-w-[170px] h-14 sm:h-16 rounded-2xl bg-gradient-to-r from-rose-600 via-pink-600 to-red-600 text-white font-black text-sm sm:text-base shadow-[0_0_35px_rgba(244,63,94,0.85),inset_0_2px_4px_rgba(255,255,255,0.4)] border border-pink-300/80 animate-pulse flex items-center justify-center gap-2 active:scale-95 hover:scale-[1.03] transition-all duration-200"
+            className="w-16 h-16 rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-red-600 text-white shadow-[0_0_35px_rgba(244,63,94,0.85),inset_0_2px_4px_rgba(255,255,255,0.4)] border border-pink-300/80 animate-pulse flex items-center justify-center active:scale-95 hover:scale-105 transition-all duration-200 cursor-pointer"
             title={loc('قبول Match و شروع ویدیو چت', 'Accept Match & Start Video Call')}
           >
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shadow-inner">
-              <Heart className="w-5 h-5 fill-current text-white drop-shadow-md" />
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shadow-inner">
+              <Heart className="w-6 h-6 fill-current text-white drop-shadow-md" />
             </div>
-            <span>{loc('قبول Match', 'Accept')}</span>
           </button>
         </div>
       )}

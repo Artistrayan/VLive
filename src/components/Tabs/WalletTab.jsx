@@ -345,44 +345,44 @@ export default function WalletTab(props) {
             <div className={`grid grid-cols-2 ${canWithdraw ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} gap-3 text-xs`}>
               <button
                 onClick={() => setWalletSubTab('buy')}
-                className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'buy' ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-amber-500/50'}`}
+                title={window.loc('خرید سکه', 'Buy Coins')}
+                className={`p-4 rounded-3xl border transition flex items-center justify-center group ${walletSubTab === 'buy' ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-amber-500/50'}`}
               >
                 <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-400 group-hover:scale-110 transition">
-                  <Plus className="w-6 h-6" />
+                  <Plus className="w-7 h-7" />
                 </div>
-                <span className="font-black text-sm">{window.loc('خرید سکه', 'Buy Coins')}</span>
               </button>
 
               <button
                 onClick={() => setWalletSubTab('giftshop')}
-                className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'giftshop' ? 'bg-pink-500/20 border-pink-400 text-pink-300 shadow-[0_0_20px_rgba(236,72,153,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-pink-500/50'}`}
+                title={window.loc('ارسال هدیه', 'Send Gift')}
+                className={`p-4 rounded-3xl border transition flex items-center justify-center group ${walletSubTab === 'giftshop' ? 'bg-pink-500/20 border-pink-400 text-pink-300 shadow-[0_0_20px_rgba(236,72,153,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-pink-500/50'}`}
               >
                 <div className="p-3 rounded-2xl bg-pink-500/20 text-pink-400 group-hover:scale-110 transition">
-                  <Gift className="w-6 h-6" />
+                  <Gift className="w-7 h-7" />
                 </div>
-                <span className="font-black text-sm">{window.loc('ارسال هدیه', 'Send Gift')}</span>
               </button>
 
               {canWithdraw && (
                 <button
                   onClick={() => setWalletSubTab('withdraw')}
-                  className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'withdraw' ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-emerald-500/50'}`}
+                  title={window.loc('برداشت وجه', 'Withdraw')}
+                  className={`p-4 rounded-3xl border transition flex items-center justify-center group ${walletSubTab === 'withdraw' ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-emerald-500/50'}`}
                 >
                   <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition">
-                    <ArrowUpRight className="w-6 h-6" />
+                    <ArrowUpRight className="w-7 h-7" />
                   </div>
-                  <span className="font-black text-sm">{window.loc('برداشت', 'Withdraw')}</span>
                 </button>
               )}
 
               <button
                 onClick={() => setWalletSubTab('history')}
-                className={`p-4 rounded-3xl border transition flex flex-col items-center justify-center gap-2 group ${walletSubTab === 'history' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-cyan-500/50'}`}
+                title={window.loc('تراکنش‌ها', 'History')}
+                className={`p-4 rounded-3xl border transition flex items-center justify-center group ${walletSubTab === 'history' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_20px_rgba(6,182,212,0.3)]' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-cyan-500/50'}`}
               >
                 <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-400 group-hover:scale-110 transition">
-                  <Clock className="w-6 h-6" />
+                  <Clock className="w-7 h-7" />
                 </div>
-                <span className="font-black text-sm">{window.loc('تراکنش‌ها', 'History')}</span>
               </button>
             </div>
 

@@ -421,18 +421,18 @@ export default function UserProfileViewModal({
             )}
           </div>
 
-          {/* Action Row: Message, Audio Call, Video Call, Gift */}
+          {/* Action Row: Message, Audio Call, Video Call, Gift (Icon-Centric) */}
           {!isSelf && (
-            <div className="grid grid-cols-4 gap-2 pt-2">
+            <div className="grid grid-cols-4 gap-2.5 pt-2">
               <button
                 onClick={() => {
                   onClose();
                   onStartMessage(user);
                 }}
-                className="py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-300 font-bold text-xs flex flex-col items-center gap-1 shadow-md transition"
+                title={window.loc('ارسال پیام', 'Send Message')}
+                className="py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-300 flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition cursor-pointer"
               >
-                <MessageSquare className="w-4 h-4 text-cyan-400" />
-                <span>{window.loc('پیام', 'Message')}</span>
+                <MessageSquare className="w-5 h-5 text-cyan-400" />
               </button>
 
               <button
@@ -440,10 +440,10 @@ export default function UserProfileViewModal({
                   onClose();
                   onStartCall(user, 'audio');
                 }}
-                className="py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-emerald-300 font-bold text-xs flex flex-col items-center gap-1 shadow-md transition"
+                title={window.loc('تماس صوتی', 'Voice Call')}
+                className="py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-emerald-300 flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition cursor-pointer"
               >
-                <PhoneCall className="w-4 h-4 text-emerald-400" />
-                <span>{window.loc('تماس صوتی', 'Voice Call')}</span>
+                <PhoneCall className="w-5 h-5 text-emerald-400" />
               </button>
 
               <button
@@ -451,20 +451,20 @@ export default function UserProfileViewModal({
                   onClose();
                   onStartCall(user, 'video');
                 }}
-                className="py-3 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-black text-xs flex flex-col items-center gap-1 shadow-lg hover:opacity-90 transition"
+                title={window.loc('تماس تصویری', 'Video Call')}
+                className="py-3.5 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg hover:scale-105 active:scale-95 transition cursor-pointer flex items-center justify-center"
               >
-                <Video className="w-4 h-4 fill-white" />
-                <span>{window.loc('تماس تصویری', 'Video Call')}</span>
+                <Video className="w-5 h-5 fill-white" />
               </button>
 
               <button
                 onClick={() => {
                   onSendGift(user);
                 }}
-                className="py-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs flex flex-col items-center gap-1 shadow-md transition"
+                title={window.loc('ارسال هدیه', 'Send Gift')}
+                className="py-3.5 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition cursor-pointer"
               >
-                <Gift className="w-4 h-4 text-amber-400 animate-bounce" />
-                <span>{window.loc('ارسال هدیه', 'Send Gift')}</span>
+                <Gift className="w-5 h-5 text-amber-400 animate-bounce" />
               </button>
             </div>
           )}

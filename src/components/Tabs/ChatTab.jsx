@@ -717,18 +717,18 @@ export default function ChatTab(props) {
 
                     <button
                       onClick={() => setIsCreateGroupModalOpen(true)}
-                      className="px-3 py-1.5 rounded-xl bg-purple-600/20 text-purple-300 border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 hover:bg-purple-600/30 transition shadow-md"
+                      className="p-2 rounded-xl bg-purple-600/20 text-purple-300 border border-purple-500/40 hover:bg-purple-600/30 transition shadow-md flex items-center justify-center"
+                      title="Create Group"
                     >
                       <Users className="w-4 h-4 text-purple-400" />
-                      <span className="hidden sm:inline">Create Group</span>
                     </button>
 
                     <button
                       onClick={() => setIsNewChatModalOpen(true)}
-                      className="px-3 py-1.5 rounded-xl btn-neon-pink text-xs font-bold flex items-center gap-1.5 shadow-lg hover:scale-105 transition"
+                      className="p-2 rounded-xl btn-neon-pink shadow-lg hover:scale-105 transition flex items-center justify-center"
+                      title="New Chat"
                     >
-                      <Plus className="w-4 h-4" />
-                      <span>New Chat</span>
+                      <Plus className="w-4 h-4 text-white" />
                     </button>
                   </div>
                 </div>
@@ -775,7 +775,7 @@ export default function ChatTab(props) {
               </VisualSectionWrapper>
             </div>
 
-            {/* 3. CATEGORY TABS: UNREAD, READ, ALL, PRIVATE, GROUPS, CALLS, ARCHIVED */}
+            {/* 3. CATEGORY TABS: UNREAD, READ, ALL, PRIVATE, GROUPS, CALLS, ARCHIVED (ICON-CENTRIC) */}
             <div className={(activeConversationId ? "hidden md:flex" : "flex") + " items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs font-bold shrink-0"}>
               {(() => {
                 const unreadList = conversations.filter(c => (c.unreadCount || 0) > 0 && !c.archived);
@@ -784,10 +784,10 @@ export default function ChatTab(props) {
                   { id: 'unread', label: window.loc('خوانده‌نشده', 'Unread'), icon: Mail, badge: unreadList.length, highlight: unreadList.length > 0 },
                   { id: 'read', label: window.loc('خوانده‌شده', 'Read'), icon: MailCheck, badge: readList.length },
                   { id: 'all', label: window.loc('همه', 'All'), icon: MessageSquare, badge: conversations.length },
-                  { id: 'private', label: window.loc('Private (خصوصی)', 'Private'), icon: User, badge: conversations.filter(c => !c.isGroup && !c.archived).length },
-                  { id: 'groups', label: window.loc('Groups (گروه‌ها)', 'Groups'), icon: Users, badge: conversations.filter(c => c.isGroup).length },
-                  { id: 'calls', label: window.loc('Calls (تماس‌ها)', 'Calls'), icon: Phone, badge: conversations.filter(c => c.type === 'call').length },
-                  { id: 'archived', label: window.loc('Archived (بایگانی)', 'Archived'), icon: Archive, badge: conversations.filter(c => c.archived).length }
+                  { id: 'private', label: window.loc('خصوصی', 'Private'), icon: User, badge: conversations.filter(c => !c.isGroup && !c.archived).length },
+                  { id: 'groups', label: window.loc('گروه‌ها', 'Groups'), icon: Users, badge: conversations.filter(c => c.isGroup).length },
+                  { id: 'calls', label: window.loc('تماس‌ها', 'Calls'), icon: Phone, badge: conversations.filter(c => c.type === 'call').length },
+                  { id: 'archived', label: window.loc('بایگانی', 'Archived'), icon: Archive, badge: conversations.filter(c => c.archived).length }
                 ];
               })().map(tab => {
                 const IconComponent = tab.icon;
@@ -796,10 +796,10 @@ export default function ChatTab(props) {
                   <button
                     key={tab.id}
                     onClick={() => setMsgFilterTab(tab.id)}
-                    className={"px-3 py-1.5 rounded-xl flex items-center gap-1.5 shrink-0 transition border " + (isActive ? "bg-gradient-to-r from-pink-600 to-purple-600 text-white border-pink-400 shadow-md" : (tab.highlight ? "bg-pink-500/10 text-pink-300 border-pink-500/30 hover:bg-pink-500/20" : "bg-slate-900/80 text-slate-400 border-slate-800/80 hover:bg-slate-800 hover:text-slate-200"))}
+                    title={tab.label}
+                    className={"p-2 px-2.5 rounded-xl flex items-center gap-1.5 shrink-0 transition border " + (isActive ? "bg-gradient-to-r from-pink-600 to-purple-600 text-white border-pink-400 shadow-md" : (tab.highlight ? "bg-pink-500/10 text-pink-300 border-pink-500/30 hover:bg-pink-500/20" : "bg-slate-900/80 text-slate-400 border-slate-800/80 hover:bg-slate-800 hover:text-slate-200"))}
                   >
-                    <IconComponent className={"w-3.5 h-3.5 " + (tab.highlight && !isActive ? "text-pink-400 animate-pulse" : "")} />
-                    <span>{tab.label}</span>
+                    <IconComponent className={"w-4 h-4 " + (tab.highlight && !isActive ? "text-pink-400 animate-pulse" : "")} />
                     <span className={"px-1.5 py-0.2 rounded-full text-[9px] " + (isActive ? "bg-white/20 text-white font-black" : (tab.highlight ? "bg-pink-500 text-slate-950 font-black" : "bg-slate-950 text-slate-400"))}>
                       {tab.badge}
                     </span>

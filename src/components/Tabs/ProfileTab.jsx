@@ -858,11 +858,10 @@ export default function ProfileTab(props) {
                 {isAdminUser && (
                   <button
                     onClick={() => setIsAdminPanelOpen && setIsAdminPanelOpen(true)}
-                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white backdrop-blur-xl transition-all duration-300 border border-rose-400/40 shadow-[0_0_15px_rgba(225,29,72,0.4)] flex items-center gap-1.5 text-xs font-black cursor-pointer group"
+                    className="p-2 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white backdrop-blur-xl transition-all duration-300 border border-rose-400/40 shadow-[0_0_15px_rgba(225,29,72,0.4)] flex items-center justify-center cursor-pointer group"
                     title={window.loc('پنل مدیریت', 'Admin Panel')}
                   >
-                    <Shield className="w-3.5 h-3.5 text-white group-hover:rotate-12 transition-transform" />
-                    <span className="hidden sm:inline">{window.loc('مدیریت', 'Admin')}</span>
+                    <Shield className="w-4 h-4 text-white group-hover:rotate-12 transition-transform" />
                   </button>
                 )}
 
@@ -871,7 +870,7 @@ export default function ProfileTab(props) {
                   className="p-2 rounded-xl bg-slate-950/70 hover:bg-slate-900 text-white backdrop-blur-xl transition-all duration-300 border border-white/20 shadow-md hover:border-cyan-500/50 group cursor-pointer"
                   title="Share QR Code"
                 >
-                  <QrCode className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
+                  <QrCode className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
                 </button>
               </div>
             </div>
@@ -1003,52 +1002,37 @@ export default function ProfileTab(props) {
                   {/* Followers */}
                   <button
                     onClick={() => setActiveSeparateModal('followers')}
-                    className="py-1 px-1.5 flex flex-col sm:flex-row items-center justify-center gap-1.5 group hover:bg-indigo-950/40 rounded-xl transition cursor-pointer active:scale-95"
-                    title={window.loc('مشاهده دنبال‌کنندگان', 'View Followers')}
+                    className="py-1 px-1.5 flex items-center justify-center gap-2 group hover:bg-indigo-950/40 rounded-xl transition cursor-pointer active:scale-95"
+                    title={window.loc('دنبال‌کنندگان (Followers)', 'Followers')}
                   >
                     <Users className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 group-hover:scale-110 transition-transform shrink-0" />
-                    <div className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5">
-                      <span className="text-xs sm:text-sm font-black text-white font-mono group-hover:text-indigo-300 transition">
-                        {formatNum(followersList.length || userFollowersCount)}
-                      </span>
-                      <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium">
-                        {window.loc('فالور', 'Followers')}
-                      </span>
-                    </div>
+                    <span className="text-xs sm:text-sm font-black text-white font-mono group-hover:text-indigo-300 transition">
+                      {formatNum(followersList.length || userFollowersCount)}
+                    </span>
                   </button>
 
                   {/* Following */}
                   <button
                     onClick={() => setActiveSeparateModal('following')}
-                    className="py-1 px-1.5 flex flex-col sm:flex-row items-center justify-center gap-1.5 group hover:bg-blue-950/40 rounded-xl transition cursor-pointer active:scale-95"
-                    title={window.loc('مشاهده دنبال‌شوندگان', 'View Following')}
+                    className="py-1 px-1.5 flex items-center justify-center gap-2 group hover:bg-blue-950/40 rounded-xl transition cursor-pointer active:scale-95"
+                    title={window.loc('دنبال‌شوندگان (Following)', 'Following')}
                   >
                     <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 group-hover:scale-110 transition-transform shrink-0" />
-                    <div className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5">
-                      <span className="text-xs sm:text-sm font-black text-white font-mono group-hover:text-blue-300 transition">
-                        {formatNum(userFollowingCount)}
-                      </span>
-                      <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium">
-                        {window.loc('فالوئینگ', 'Following')}
-                      </span>
-                    </div>
+                    <span className="text-xs sm:text-sm font-black text-white font-mono group-hover:text-blue-300 transition">
+                      {formatNum(userFollowingCount)}
+                    </span>
                   </button>
 
                   {/* Views */}
                   <button
                     onClick={() => setActiveSeparateModal('views')}
-                    className="py-1 px-1.5 flex flex-col sm:flex-row items-center justify-center gap-1.5 group hover:bg-cyan-950/40 rounded-xl transition cursor-pointer active:scale-95"
-                    title={window.loc('مشاهده بازدیدها', 'View Visitors')}
+                    className="py-1 px-1.5 flex items-center justify-center gap-2 group hover:bg-cyan-950/40 rounded-xl transition cursor-pointer active:scale-95"
+                    title={window.loc('بازدیدها (Views)', 'Views')}
                   >
                     <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400 group-hover:scale-110 transition-transform shrink-0" />
-                    <div className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5">
-                      <span className="text-xs sm:text-sm font-black text-white font-mono group-hover:text-cyan-300 transition">
-                        {formatNum(userViewsCount)}
-                      </span>
-                      <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium">
-                        {window.loc('بازدید', 'Views')}
-                      </span>
-                    </div>
+                    <span className="text-xs sm:text-sm font-black text-white font-mono group-hover:text-cyan-300 transition">
+                      {formatNum(userViewsCount)}
+                    </span>
                   </button>
 
                 </div>

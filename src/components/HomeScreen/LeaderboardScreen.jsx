@@ -65,9 +65,8 @@ export default function LeaderboardScreen({ loc }) {
       </div>
 
       {/* Share Button (Example for rank 1) */}
-      <button onClick={() => handleShare(1, 'User')} className="flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full font-bold text-xs">
-        <Share2 className="w-4 h-4" />
-        {loc('اشتراک‌گذاری رتبه', 'Share Rank')}
+      <button onClick={() => handleShare(1, 'User')} title={loc('اشتراک‌گذاری رتبه', 'Share Rank')} className="flex items-center justify-center p-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full font-bold text-xs shadow-lg hover:scale-105 active:scale-95 transition">
+        <Share2 className="w-5 h-5" />
       </button>
     </div>
   );
